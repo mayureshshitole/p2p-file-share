@@ -8,7 +8,11 @@ const Room = () => {
   const [roomUsers, setRoomUsers] = useState<any>([]);
 
   const [fileBuffer, setFileBuffer] = useState<File | null>(null);
+  const [fileMeta, setFileMeta] = useState<any | null>(null);
 
+  let fileBufferArray = [];
+
+  
   useEffect(() => {
     // socket.on("connect", () => {
     //   console.log("connected->" + socket.id);
@@ -31,7 +35,8 @@ const Room = () => {
 
     socket.on("fs-meta", (data: any) => {
       console.log(data);
-      setFileBuffer(bufferToFile(data.buffer, data.metadata.name));
+      setFileMeta(data.metadata);
+      // setFileBuffer(bufferToFile(data.buffer, data.metadata.name));
     });
   }, []);
 
@@ -45,29 +50,33 @@ const Room = () => {
     return file;
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files && e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const buffer = event.target?.result as ArrayBuffer;
-        socket.emit("fileBuffer", { room: params.roomID, buffer });
-      };
-      reader.readAsArrayBuffer(file);
-    }
-  };
+  // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files && e.target.files[0];
+  //   if (file) {
+  //     const reader = new FileReader();
+  //     reader.onload = (event) => {
+  //       const buffer = event.target?.result as ArrayBuffer;
+  //       socket.emit("fileBuffer", { room: params.roomID, buffer });
+  //     };
+  //     reader.readAsArrayBuffer(file);
+  //   }
+  // };
 
   const downloadFile = () => {
-    if (fileBuffer) {
-      const url = URL.createObjectURL(fileBuffer);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = fileBuffer.name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+    if (fileMeta && params.roomID) {
+      console.log("start downloading the file");
+      socket.emit("fileBuffer", { room: params.roomID, option: true });
     }
+    // if (fileBuffer) {
+    //   const url = URL.createObjectURL(fileBuffer);
+    //   const link = document.createElement("a");
+    //   link.href = url;
+    //   link.download = fileBuffer.name;
+    //   document.body.appendChild(link);
+    //   link.click();
+    //   document.body.removeChild(link);
+    //   URL.revokeObjectURL(url);
+    // }
   };
   if (fileBuffer) console.log(fileBuffer);
   return (
@@ -78,13 +87,12 @@ const Room = () => {
           <h2>waiting for other users to join......</h2>
         ) : (
           <div>
-            <input type="file" onChange={handleFileChange} />
-            {fileBuffer && (
+            {fileMeta && (
               <div>
                 <h2>File Data</h2>
-                <p>File Name: {fileBuffer?.name}</p>
+                <p>File Name: {fileMeta?.name}</p>
                 <p>
-                  File Size: {(fileBuffer?.size / (1024 * 1024)).toFixed(2)} mb
+                  File Size: {(fileMeta?.size / (1024 * 1024)).toFixed(2)} mb
                 </p>
                 <button onClick={downloadFile}>Download File</button>
               </div>

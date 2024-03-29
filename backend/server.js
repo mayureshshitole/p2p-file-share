@@ -23,6 +23,7 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("receive", msg);
   });
 
+  // creating a room
   socket.on("create-room", (data) => {
     socket.join(data.uid);
     let roomArray = io.sockets.adapter.rooms.get(data.uid);
@@ -33,6 +34,7 @@ io.on("connection", (socket) => {
     // roomCreators.set(data.uid, socket.id);
   });
 
+  // join the room and sehare some room socket data
   socket.on("join-room", (room) => {
     socket.join(room);
     console.log("user joined the room ->" + room);
@@ -44,15 +46,22 @@ io.on("connection", (socket) => {
     // console.log(io.sockets.adapter.rooms['join-room'].length)
   });
 
+  // sending a file's metadata
   socket.on("file-meta", (data) => {
     console.log(data);
     socket.to(data.uid).emit("fs-meta", data);
   });
 
+  // requesting a file in buffer
   socket.on("fileBuffer", (data) => {
-    const { room, buffer } = data;
-    // Relay the buffer to all users in the room
-    io.to(room).emit("fileBuffer", buffer);
+    const { room, option } = data;
+    console.log(data);
+  });
+
+  // sending actual file
+  socket.on("fileTransfer", (data) => {
+    const { room, buffer, progress } = data;
+    socket.in(room).emit("receiveTransfer", { buffer, progress });
   });
 
   socket.on("disconnect", () => {
